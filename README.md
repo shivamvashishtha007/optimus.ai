@@ -30,10 +30,6 @@ function trackLastProcessedRow(sheetName, logicNumber, lastRow) {
 
 
 
-
-
-
-
 /**
  * Logic 0: Retrieve Last Processed Row for a Sheet
  */
@@ -58,10 +54,6 @@ function getLastProcessedRow(sheetName, logicNumber) {
 
 
 
-
-
-
-
 /**
  * Get Last Non-Empty Row in a Given Column
  */
@@ -74,8 +66,6 @@ function getLastNonEmptyRow(sheet, columnIndex) {
   }
   return 1; // Default to first row if all values are empty
 }
-
-
 
 
 /**
@@ -97,12 +87,8 @@ function processSourceToGeoSheets() {
     var headerRow = 1;
 
 
-
-
     let geoDataMap = {}; // Stores existing data for each geo-sheet to reduce `getValues()` calls
     let dataToAppend = {}; // Stores data to be written in batch mode
-
-
 
 
     for (var i = Math.max(headerRow, startRow); i < lastRow; i++) {
@@ -113,12 +99,8 @@ function processSourceToGeoSheets() {
         }
 
 
-
-
         // Assign Serial Number and Date
         if (!row[1]) row[1] = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "M/d/yyyy");
-
-
 
 
         var gameName = row[2].trim();
@@ -127,8 +109,6 @@ function processSourceToGeoSheets() {
         var geoList = row[7] ? row[7].split(",").map(geo => geo.trim()) : [];
         var blogTypes = row[6] ? row[6].split(",").map(blog => blog.trim()) : [];
         var contentMap = {};
-
-
 
 
         var contentTypeEntries = row[8] ? row[8].split("\n") : [];
@@ -140,8 +120,6 @@ function processSourceToGeoSheets() {
                 applicableGeos.forEach(geo => contentMap[geo] = type);
             }
         }
-
-
 
 
         if (!gameName || geoList.length === 0 || blogTypes.length === 0) continue;
@@ -159,13 +137,9 @@ function processSourceToGeoSheets() {
             }
 
 
-
-
             if (!dataToAppend[geoSheetName]) {
                 dataToAppend[geoSheetName] = [];
             }
-
-
 
 
             // ✅ Loop through blog types (keeps serial numbers increasing correctly)
@@ -174,14 +148,10 @@ function processSourceToGeoSheets() {
                 var key = gameName + "|" + gplayPackage + "|" + blogType;
 
 
-
-
                 if (geoDataMap[geoSheetName].has(key)) {
                     Logger.log(`⏭️ Skipping duplicate entry for ${gameName} in ${geoSheetName}.`);
                     continue;
                 }
-
-
 
 
                 dataToAppend[geoSheetName].push([
@@ -199,16 +169,12 @@ function processSourceToGeoSheets() {
         }
 
 
-
-
         // ✅ Assign Serial Number in Column A if missing
         if (!row[0]) {
             row[0] = i + 1; // Ensure continuity of serial numbers
         }
         row[9] = "Processed"; // Mark as processed
     }
-
-
 
 
     for (var sheetName in dataToAppend) {
@@ -221,15 +187,11 @@ function processSourceToGeoSheets() {
     }
 
 
-
-
     trackLastProcessedRow("Source Inputs", 1, lastRow);
     sourceSheet.getDataRange().setValues(sourceData);
     Logger.log("✅ Logic 1 Execution Completed Successfully.");
     SpreadsheetApp.flush();
 }
-
-
 
 
 /**
@@ -246,53 +208,6 @@ function getLastNonEmptyRow(sheet, columnIndex) {
 }
 
 
-
-
-/**
- * 🚀 Initial Logic 2 Start - Adds a custom menu to the Google Sheets UI for easy execution of Logic 2.
- */
-function onOpen() {
-  var ui = SpreadsheetApp.getUi();
-  ui.createMenu('Automation Controls')
-    .addItem('Run Logic 2 for Specific Sheet', 'showSheetSelectionDialog')
-    .addToUi();
-}
-
-
-
-
-/**
- * ✅ Displays a dialog box for the user to select a Geowise Sheet to run Logic 2.
- */
-function showSheetSelectionDialog() {
-  var ui = SpreadsheetApp.getUi();
-  var response = ui.prompt(
-    'Run Logic 2',
-    'Enter the Geowise Sheet name (e.g., EN, PL, PTBR, IT, FR, etc.) or type "ALL" to process all sheets:',
-    ui.ButtonSet.OK_CANCEL
-  );
-
-
-
-
-  if (response.getSelectedButton() == ui.Button.OK) {
-    var sheetName = response.getResponseText().trim().toUpperCase();
-    var allowedSheets = ["EN", "PL", "PTBR", "IT", "FR", "DE", "ES", "RU", "TR", "JA", "KO", "TW", "VI", "ID", "TH", "AR"];
-
-
-
-
-    if (sheetName === "ALL" || allowedSheets.includes(sheetName)) {
-      Logger.log(`▶️ Running Logic 2 for: ${sheetName}`);
-      processGeoToWriterSheets(sheetName === "ALL" ? null : sheetName);
-      ui.alert(`✅ Logic 2 has been executed for: ${sheetName}`);
-    } else {
-      ui.alert(`❌ Invalid sheet name. Please enter a valid Geowise Sheet name or "ALL".`);
-    }
-  }
-}
-
-
 /**
  * 🚀 Initial Logic 2 Start - Adds a custom menu to the Google Sheets UI for easy execution of Logic 2.
  */
@@ -331,6 +246,40 @@ function showSheetSelectionDialog() {
   }
 }
 
+/**
+ * 🚀 Initial Logic 2 Start - Adds a custom menu to the Google Sheets UI for easy execution of Logic 2.
+ */
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('Automation Controls')
+    .addItem('Run Logic 2 for Specific Sheet', 'showSheetSelectionDialog')
+    .addToUi();
+}
+
+/**
+ * ✅ Displays a dialog box for the user to select a Geowise Sheet to run Logic 2.
+ */
+function showSheetSelectionDialog() {
+  var ui = SpreadsheetApp.getUi();
+  var response = ui.prompt(
+    'Run Logic 2',
+    'Enter the Geowise Sheet name (e.g., EN, PL, PTBR, IT, FR, etc.) or type "ALL" to process all sheets:',
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() == ui.Button.OK) {
+    var sheetName = response.getResponseText().trim().toUpperCase();
+    var allowedSheets = ["EN", "PL", "PTBR", "IT", "FR", "DE", "ES", "RU", "TR", "JA", "KO", "TW", "VI", "ID", "TH", "AR"];
+
+    if (sheetName === "ALL" || allowedSheets.includes(sheetName)) {
+      Logger.log(`▶️ Running Logic 2 for: ${sheetName}`);
+      processGeoToWriterSheets(sheetName === "ALL" ? null : sheetName);
+      ui.alert(`✅ Logic 2 has been executed for: ${sheetName}`);
+    } else {
+      ui.alert(`❌ Invalid sheet name. Please enter a valid Geowise Sheet name or "ALL".`);
+    }
+  }
+}
 
 /**
  * 🚀 Optimized Logic 2: Transfers data from Geowise Sheets to External Writer Workbooks
@@ -338,40 +287,33 @@ function showSheetSelectionDialog() {
 function processGeoToWriterSheets(geoSheetFilter = null) {
     Logger.log("🚀 Starting Optimized Logic 2...");
 
-
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var writerConfigSheet = ss.getSheetByName("Writer Configuration Sheet");
-
 
     if (!writerConfigSheet) {
         Logger.log("❌ Writer Configuration Sheet not found. Exiting Logic 2.");
         return;
     }
 
-
     // ✅ Load writer configuration
     var writerConfigData = writerConfigSheet.getDataRange().getValues();
     var writerMap = {};
     var writerSheetNames = {};
-
 
     for (var i = 1; i < writerConfigData.length; i++) {
         var writerName = writerConfigData[i][1]?.trim().toLowerCase();
         var writerSheetURL = writerConfigData[i][3]?.trim();
         var writerSubsheetName = writerConfigData[i][2]?.trim();
 
-
         if (writerName && writerSheetURL && writerSubsheetName) {
             writerMap[writerName] = { url: writerSheetURL, sheetName: writerSubsheetName };
         }
     }
 
-
     var allowedSheets = ["EN", "PL", "PTBR", "IT", "FR", "DE", "ES", "RU", "TR", "JA", "KO", "TW", "VI", "ID", "TH", "AR"];
     var sheetsToProcess = geoSheetFilter
         ? (allowedSheets.includes(geoSheetFilter) ? [geoSheetFilter] : [])
         : ss.getSheets().map(s => s.getName()).filter(name => allowedSheets.includes(name));
-
 
     sheetsToProcess.forEach(sheetName => {
         if (geoSheetFilter && !allowedSheets.includes(geoSheetFilter)) {
@@ -379,34 +321,28 @@ function processGeoToWriterSheets(geoSheetFilter = null) {
             return;
         }
 
-
         var geoSheet = ss.getSheetByName(sheetName);
         if (!geoSheet) {
             Logger.log(`⚠️ Geowise Sheet '${sheetName}' not found. Skipping.`);
             return;
         }
 
-
         var lastProcessedRow = getLastProcessedRow(sheetName, 2);
         var geoData = geoSheet.getDataRange().getValues();
         var newProcessedRow = lastProcessedRow;
-
 
         let writerDataToAppend = {};
         let writerSheetsCache = {};  
         let writerExistingEntries = {};
         let timestampsToUpdate = [];
 
-
         for (var i = lastProcessedRow; i < geoData.length; i++) {
             var row = geoData[i];
             var writer = row[7] ? row[7].trim().toLowerCase() : "";
 
-
             if (!writer || !writerMap[writer]?.url) {
                 continue;
             }
-
 
             if (!writerSheetsCache[writer]) {
                 if (!writerMap[writer]?.url || !writerMap[writer]?.sheetName) {
@@ -414,17 +350,14 @@ function processGeoToWriterSheets(geoSheetFilter = null) {
                     continue;
                 }
 
-
                 try {
                     var writerDoc = SpreadsheetApp.openByUrl(writerMap[writer].url);
                     var writerSheet = writerDoc.getSheetByName(writerMap[writer].sheetName);
-
 
                     if (!writerSheet) {
                         Logger.log(`❌ Writer sheet '${writerMap[writer].sheetName}' not found for '${writer}'. Skipping.`);
                         continue;
                     }
-
 
                     writerSheetsCache[writer] = writerSheet;
                     var writerData = writerSheet.getDataRange().getValues();
@@ -437,15 +370,12 @@ function processGeoToWriterSheets(geoSheetFilter = null) {
                 }
             }
 
-
             var duplicateKey = `${row[2]?.trim()}|${row[4]?.trim()}|${row[6]?.trim()}`;
             if (writerExistingEntries[writer].has(duplicateKey)) {
                 continue;
             }
 
-
             if (!writerDataToAppend[writer]) writerDataToAppend[writer] = [];
-
 
             let dataRow = [
                 row[2].trim(),
@@ -458,21 +388,17 @@ function processGeoToWriterSheets(geoSheetFilter = null) {
                 row[11] ? row[11].trim() : ""
             ];
 
-
             writerDataToAppend[writer].push(dataRow);
             timestampsToUpdate.push([dataRow[5]]); // Column G value (Assigned Timestamp) to Column I
             newProcessedRow = i + 1;
         }
 
-
         for (var writer in writerDataToAppend) {
             var writerSheet = writerSheetsCache[writer];
-
 
             if (writerSheet && writerDataToAppend[writer].length > 0) {
                 var data = writerSheet.getDataRange().getValues();
 var startRow = data.length;
-
 
 // Ensure we find the actual last non-empty row in column B (Game Name / Topic)
 while (startRow > 0 && (!data[startRow - 1][1] || data[startRow - 1][1].toString().trim() === "")) {
@@ -480,9 +406,7 @@ while (startRow > 0 && (!data[startRow - 1][1] || data[startRow - 1][1].toString
 }
 startRow += 1; // Move to the next row for new data
 
-
 var dataCheck = writerSheet.getRange(startRow, 2).getValue().trim(); // Check Column B (Game Name)
-
 
 if (!dataCheck) {
     startRow = startRow; // If the last row is empty, overwrite it
@@ -491,25 +415,20 @@ if (!dataCheck) {
 }
 
 
-
-
                 writerSheet.getRange(startRow, 2, writerDataToAppend[writer].length, writerDataToAppend[writer][0].length)
                     .setValues(writerDataToAppend[writer]);
             }
         }
 
-
         if (timestampsToUpdate.length > 0) {
             geoSheet.getRange(lastProcessedRow + 1, 9, timestampsToUpdate.length, 1).setValues(timestampsToUpdate);
         }
-
 
         SpreadsheetApp.flush();
         trackLastProcessedRow(sheetName, 2, newProcessedRow);
         Logger.log(`✅ Optimized Logic 2 Execution Completed for '${sheetName}'.`);
     });
 }
-
 
 /**
  * ✅ Maps Priority values from Geowise Sheet to Writer Sheet dropdown options.
@@ -529,9 +448,7 @@ function mapPriorityValue(priority) {
     return priorityMapping[priority.trim()] || "IP0";
 }
 
-
 //Logic 3 starts
-
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
@@ -540,7 +457,6 @@ function onOpen() {
     .addItem('Run Logic 3 for Specific Writer', 'showGeoSheetSelectionDialog')
     .addToUi();
 }
-
 
 /**
  * Displays a dialog box for the user to enter the Geowise Sheet name.
@@ -553,11 +469,9 @@ function showGeoSheetSelectionDialog() {
     ui.ButtonSet.OK_CANCEL
   );
 
-
   if (response.getSelectedButton() == ui.Button.OK) {
     var sheetName = response.getResponseText().trim().toUpperCase();
     var allowedSheets = ["EN", "PL", "PTBR", "IT", "FR", "DE", "ES", "RU", "TR", "JA", "KO", "TW", "VI", "ID", "TH", "AR"];
-
 
     if (sheetName === "ALL" || allowedSheets.includes(sheetName)) {
       Logger.log(`▶️ Running Logic 3 for: ${sheetName}`);
@@ -569,7 +483,6 @@ function showGeoSheetSelectionDialog() {
   }
 }
 
-
 /**
  * 🚀 Optimized Logic 3: Transfers data from Writer Sheets back to Geowise Sheets.
  */
@@ -577,14 +490,12 @@ function processWriterToGeoSheets(geoSheetName) {
   var allowedSheets = ["EN", "PL", "PTBR", "IT", "FR", "DE", "ES", "RU", "TR", "JA", "KO", "TW", "VI", "ID", "TH", "AR"];
   var sheetsToProcess = geoSheetName ? [geoSheetName] : allowedSheets;
 
-
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var writerConfigSheet = ss.getSheetByName("Writer Configuration Sheet");
   if (!writerConfigSheet) {
     Logger.log("❌ Writer Configuration Sheet not found. Exiting Logic 3.");
     return;
   }
-
 
   var writerConfigData = writerConfigSheet.getDataRange().getValues();
   var writerSheetMap = {};
@@ -597,17 +508,14 @@ function processWriterToGeoSheets(geoSheetName) {
     }
   }
 
-
   sheetsToProcess.forEach(function(sheet) {
     Logger.log(`🚀 Starting Optimized Logic 3 for Geowise Sheet: '${sheet}'`);
-
 
     var geoSheet = ss.getSheetByName(sheet);
     if (!geoSheet) {
       Logger.log(`❌ Geowise Sheet '${sheet}' not found. Skipping.`);
       return;
     }
-
 
     var lastProcessedRow = getLastProcessedRow(sheet, 3);
     var geoData = geoSheet.getDataRange().getValues();
@@ -617,11 +525,9 @@ function processWriterToGeoSheets(geoSheetName) {
       return;
     }
 
-
     var updates = [];
     var newProcessedRow = lastProcessedRow;
     var writerSheetsCache = {};
-
 
     for (var i = Math.max(1, lastProcessedRow); i < totalRows; i++) {
       var row = geoData[i];
@@ -629,17 +535,14 @@ function processWriterToGeoSheets(geoSheetName) {
       var assignedDate = row[9]?.toString().trim();
       var deliveredDate = row[10]?.toString().trim();
 
-
       if (!writerName || (assignedDate && deliveredDate)) {
         continue;
       }
-
 
       if (!writerSheetMap[writerName]) {
         Logger.log(`⚠️ Writer '${writerName}' not found in Writer Configuration Sheet. Skipping row ${i + 1}.`);
         continue;
       }
-
 
       if (!writerSheetsCache[writerName]) {
         var writerDoc = SpreadsheetApp.openByUrl(writerSheetMap[writerName].sheetUrl);
@@ -651,7 +554,6 @@ function processWriterToGeoSheets(geoSheetName) {
         writerSheetsCache[writerName] = writerSheet.getDataRange().getValues();
       }
 
-
       var writerData = writerSheetsCache[writerName];
       var writerMap = {};
       for (var j = 1; j < writerData.length; j++) {
@@ -659,15 +561,12 @@ function processWriterToGeoSheets(geoSheetName) {
         writerMap[key] = [writerData[j][7], writerData[j][8]];
       }
 
-
       var geoKey = `${row[2]?.trim()}|${row[4]?.trim()}|${row[6]?.trim()}`;
       if (writerMap[geoKey]) {
         var [writerAssignedDate, writerDeliveredDate] = writerMap[geoKey];
 
-
         if (!assignedDate && writerAssignedDate) row[9] = writerAssignedDate;
         if (!deliveredDate && writerDeliveredDate) row[10] = writerDeliveredDate;
-
 
         updates.push([row[9], row[10]]);
         newProcessedRow = i + 1;
@@ -676,7 +575,6 @@ function processWriterToGeoSheets(geoSheetName) {
       }
     }
 
-
     if (updates.length > 0) {
       geoSheet.getRange(lastProcessedRow + 1, 10, updates.length, 2).setValues(updates);
       Logger.log(`✅ Successfully updated ${updates.length} rows in '${sheet}'.`);
@@ -684,11 +582,7 @@ function processWriterToGeoSheets(geoSheetName) {
       Logger.log(`⚠️ No updates made in '${sheet}'. All rows were already filled.`);
     }
 
-
     trackLastProcessedRow(sheet, 3, newProcessedRow);
     Logger.log(`✅ Optimized Logic 3 Execution Completed for '${sheet}'.`);
   });
 }
-
-
-
